@@ -1,0 +1,114 @@
+Options +FollowSymlinks
+RewriteEngine On
+RewriteBase /your.url
+RewriteRule ^index\.php$ - [L]
+
+# Create user friendly login URL.
+RewriteRule ^admin$ http://your.url/wp-login.php [NC,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^([_0-9a-zA-Z-]+/)?(wp-(content|admin|includes).*) $2 [L]
+RewriteRule ^([_0-9a-zA-Z-]+/)?(.*\.php)$ $2 [L]
+RewriteRule . index.php [L]
+
+# Disable server signature.
+ServerSignature Off
+
+# Block acces to files with sensitive information.
+	Options All -Indexes
+	<files .htaccess>
+		Order allow,deny
+		Deny from all
+	</files>
+	<files readme.html>
+		Order allow,deny
+		Deny from all
+	</files>
+	<files license.txt>
+		Order allow,deny
+		Deny from all
+	</files>
+	<files install.php>
+		Order allow,deny
+		Deny from all
+	</files>
+	<files wp-config.php>
+		Order allow,deny
+		Deny from all
+	</files>
+	<files error_log>
+		Order allow,deny
+		Deny from all
+	</files>
+	<files fantastico_fileslist.txt>
+		Order allow,deny
+		Deny from all
+	</files>
+	<files fantversion.php>
+		Order allow,deny
+		Deny from all
+	</files>
+
+# Protect against malicious URL requests.
+	<ifModule mod_rewrite.c>
+		RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]
+		RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+		RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+	</ifModule>
+	
+# Protect against spam bots.
+	<ifModule mod_rewrite.c>
+		RewriteCond %{REQUEST_METHOD} POST
+		RewriteCond %{REQUEST_URI} .wp-comments-post\.php*
+		RewriteCond %{HTTP_REFERER} !.your.url.* [OR]
+		RewriteCond %{HTTP_USER_AGENT} ^$
+		RewriteRule (.*) ^http://%{REMOTE_ADDR}/$ [R=301,L]
+	</ifModule>
+	
+# Protect against SQL injections.
+	<ifModule mod_rewrite.c>
+		RewriteBase /your.url
+		RewriteCond %{REQUEST_METHOD} ^(HEAD|TRACE|DELETE|TRACK) [NC]
+		RewriteRule ^(.*)$ - [F,L]
+		RewriteCond %{QUERY_STRING} \.\.\/ [NC,OR]
+		RewriteCond %{QUERY_STRING} boot\.ini [NC,OR]
+		RewriteCond %{QUERY_STRING} tag\= [NC,OR]
+		RewriteCond %{QUERY_STRING} ftp\:  [NC,OR]
+		RewriteCond %{QUERY_STRING} http\:  [NC,OR]
+		RewriteCond %{QUERY_STRING} https\:  [NC,OR]
+		RewriteCond %{QUERY_STRING} (\|%3E) [NC,OR]
+		RewriteCond %{QUERY_STRING} mosConfig_[a-zA-Z_]{1,21}(=|%3D) [NC,OR]
+		RewriteCond %{QUERY_STRING} base64_encode.*\(.*\) [NC,OR]
+		RewriteCond %{QUERY_STRING} ^.*(\[|\]|\(|\)||ê|"|;|\?|\*|=$).* [NC,OR]
+		RewriteCond %{QUERY_STRING} ^.*("|'|<|>|\|{||).* [NC,OR]
+		RewriteCond %{QUERY_STRING} ^.*(%24&x).* [NC,OR]
+		RewriteCond %{QUERY_STRING} ^.*(%0|%A|%B|%C|%D|%E|%F|127\.0).* [NC,OR]
+		RewriteCond %{QUERY_STRING} ^.*(globals|encode|localhost|loopback).* [NC,OR]
+		RewriteCond %{QUERY_STRING} ^.*(request|select|insert|union|declare).* [NC]
+		RewriteCond %{HTTP_COOKIE} !^.*wordpress_logged_in_.*$
+		RewriteRule ^(.*)$ - [F,L]
+	</ifModule>
+	
+# Malicious IP blocking.
+#order allow,deny
+#deny from 192.168.1.1
+#deny from 192.168.1.2
+#allow from all
+
+# Restrict WordPress login pages with IP's.
+#	<Files wp-login.php>
+#		order deny,allow
+#		deny from all
+#		# Home
+#		allow from 192.168.1.1
+#		# Work
+#		allow from 192.168.1.2
+#	</Files>
+#	<Files login>
+#		order deny,allow
+#		deny from all
+#		allow from 192.168.1.1
+#		allow from 192.168.1.2
+#	</Files>
